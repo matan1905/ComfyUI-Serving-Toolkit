@@ -19,13 +19,21 @@ def parse_command_string(command_string, command_name):
     return result
 
 import io
-from PIL import Image
-def tensorToImageConversion(img_tensor ):
-    img_tensor = (img_tensor * 255).byte()
-    img_array = img_tensor.squeeze(0).numpy()
-    img_pil = Image.fromarray(img_array)
+from PIL import Image, ImageSequence
+import numpy as np
+def tensorToImageConversion(images, duration):
+    # Create a list to store each image as a frame
+    frames = []
+
+    for img_tensor in images:
+        i = 255. * img_tensor.cpu().numpy()
+        img_pil = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+        frames.append(img_pil)
+
+    # Create a GIF from the list of frames
     img_byte_array = io.BytesIO()
-    img_pil.save(img_byte_array, format='PNG')
+    frames[0].save(img_byte_array, save_all=True, append_images=frames[1:], format='WEBP', duration=duration, loop=0, quality=100, lossless=True)
+
     img_byte_array.seek(0)
     return img_byte_array
 

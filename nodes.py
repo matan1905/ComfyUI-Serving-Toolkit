@@ -1,5 +1,4 @@
 import time
-from .serving_manager import serving_manager
 import threading
 from .discord_client import discord_client
 import threading
@@ -20,6 +19,7 @@ class ServingOutput:
             "required": {
                 "serving_config": ("SERVING_CONFIG",),
                 "image": ("IMAGE",),
+                "frame_duration": ("INT", {"default": 30, "min": 1, "step": 1, "max": 9999999}),
             },
         }
 
@@ -32,8 +32,8 @@ class ServingOutput:
 
     CATEGORY = "Serving-Toolkit"
 
-    def out(self, image,serving_config):
-        serving_config["serve_image_function"](image)
+    def out(self, image,serving_config,frame_duration):
+        serving_config["serve_image_function"](image,frame_duration)
         return {}
 
 
@@ -86,10 +86,10 @@ class ServingInputNumber:
                     "multiline": False,
                     "default": "number"
                 }),
-                "default": ("FLOAT", {"default": 0.0,}),
-                "min_value": ("FLOAT", {"default": -999999.0,}),
-                "max_value": ("FLOAT", {"default": 999999.0,}),
-                "step": ("FLOAT", {"default": 0.1,}),
+                "default": ("FLOAT", {"default": 0.0, "min": -999999.0, "max": 999999.0, "step": 0.0001}),
+                "min_value": ("FLOAT", {"default": -999999.0, "min": -999999.0, "max": 999999.0, "step": 0.0001}),
+                "max_value": ("FLOAT", {"default": 999999.0, "min": -999999.0, "max": 999999.0, "step": 0.0001}),
+                "step": ("FLOAT", {"default": 0.1, "min": -999999.0, "max": 999999.0, "step": 0.0001}),
             }
         }
 
@@ -166,9 +166,9 @@ class DiscordServing():
             @discord_client.command(name=command_name)
             async def execute(ctx):
                 parsed_data = parse_command_string(ctx.message.content,command_name)
-                def serve_image_function(image):
-                    image_file = tensorToImageConversion(image)
-                    asyncio.run_coroutine_threadsafe(ctx.reply(file=discord.File(image_file, filename='image.png')), discord_client.loop)
+                def serve_image_function(image, frame_duration):
+                    image_file = tensorToImageConversion(image, frame_duration)
+                    asyncio.run_coroutine_threadsafe(ctx.reply(file=discord.File(image_file, filename='image.webp')), discord_client.loop)
                 parsed_data["serve_image_function"] = serve_image_function
                 self.data.append(parsed_data)
                 self.data_ready.set()
