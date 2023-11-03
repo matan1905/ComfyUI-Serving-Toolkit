@@ -22,9 +22,10 @@ You can copy the workflow json:
 
 ## Running
 After setting up your workflow, In order for the serving to always be up, you need to allow auto queue, here is an image to help you do that:
+
 ![image](https://github.com/matan1905/ComfyUI-Serving-Toolkit/assets/24731932/d8f7b486-725d-4934-b72d-1a042b5f355a)
 
-
+#### This will require you to keep your ComfyUI and computer running. If you want to host your workflow, you can use [vast.ai](https://cloud.vast.ai/?ref_id=93071)
 
 
 ## Nodes
