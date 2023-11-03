@@ -170,6 +170,7 @@ class DiscordServing():
                     image_file = tensorToImageConversion(image, frame_duration)
                     asyncio.run_coroutine_threadsafe(ctx.reply(file=discord.File(image_file, filename='image.webp')), discord_client.loop)
                 parsed_data["serve_image_function"] = serve_image_function
+                parsed_data.update({f"attachment_url_{i}": attachment.url for i, attachment in enumerate(ctx.message.attachments)}) # populates all the attachments urls
                 self.data.append(parsed_data)
                 self.data_ready.set()
 
