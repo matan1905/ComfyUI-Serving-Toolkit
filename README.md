@@ -8,7 +8,8 @@ Currently only discord is supported.
 * Add arguments with default values, then allow your users to use them
 * Serve from your own computer, workflow is not inserted into the images so your secrets are 100% safe
 
-
+## Installation
+[Use ComfyUI Manager]([url](https://github.com/ltdrdata/ComfyUI-Manager))
 
 ## The simplest configuration
 Here a simple workflow that will get a !generate \<prompt> and resond with an image
@@ -50,9 +51,10 @@ Discord example:
 When a user types: !generate 4k epic realism portrait --negative drawing
 you could set the argument=negative and then recieve the value of "drawing" inside the output text.
 
+
 Inputs:
 * serving_config - a config made by a serving node
-* argument - the argument name, the prompt itself will be inside the "prompt" argument.
+* argument - the argument name, the prompt itself will be inside the "prompt" argument. When using discord serving, you can access attachments url using 'attachment_url_0' (and attachment_url_1 etc). then you can use nodes like WAS Image Load to download these images
 * default - the default value of this argument
 
 Outputs:
