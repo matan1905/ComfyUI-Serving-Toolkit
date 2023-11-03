@@ -1,5 +1,5 @@
-# ComfyUI Node Toolkit for Discord Image Generation
-Welcome to the ComfyUI Node Toolkit, a powerful tool for serving image generation workflows in Discord and other platforms (soon).
+# ComfyUI Serving Toolkit
+Welcome to the ComfyUI Serving Toolkit, a powerful tool for serving image generation workflows in Discord and other platforms (soon).
 This toolkit is designed to simplify the process of serving your ComfyUI workflow, making image generation bots easier than ever before.
 Currently only discord is supported.
 
@@ -9,7 +9,7 @@ Currently only discord is supported.
 * Serve from your own computer, workflow is not inserted into the images so your secrets are 100% safe
 
 ## Installation
-[Use ComfyUI Manager]([url](https://github.com/ltdrdata/ComfyUI-Manager))
+[Use ComfyUI Manager](https://github.com/ltdrdata/ComfyUI-Manager)
 
 ## The simplest configuration
 Here a simple workflow that will get a !generate \<prompt> and resond with an image
