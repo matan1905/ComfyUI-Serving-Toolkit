@@ -44,6 +44,17 @@ Inputs:
 
 Outputs:
 * Serving Config - A basic reference for this serving, used by the other nodes of this toolkit to get arguments and return images.
+
+**WebsocketServing**
+
+This will connect to a websocket and wait for JSON of {_requestId, prompt, arguments} and will return a json of {_requestId, base64_img}
+You can see an example ws server over at examples/websocket.js 
+
+Inputs:
+* websocket_url - the url of the websocket you connect to, if you use the example it will be ws://localhost:8080
+
+Outputs:
+* Serving Config - A basic reference for this serving, used by the other nodes of this toolkit to get arguments and return images.
   
 
 
