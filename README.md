@@ -10,6 +10,10 @@ Currently only discord is supported.
 
 ## Installation
 [Use ComfyUI Manager](https://github.com/ltdrdata/ComfyUI-Manager)
+or put all the files inside custom_nodes and run:
+```
+..\..\..\python_embeded\python.exe -s -m pip install -r requirements.txt
+```
 
 ## The simplest configuration
 Here a simple workflow that will get a !generate \<prompt> and resond with an image

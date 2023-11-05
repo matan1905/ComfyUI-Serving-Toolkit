@@ -5,8 +5,13 @@ import threading
 from collections import deque
 from .utils import parse_command_string, tensorToImageConversion
 import discord
-import io
 import asyncio
+import websocket
+import json
+import base64
+
+
+
 class ServingOutput:
     def __init__(self):
         # start listening to api/discord
@@ -178,6 +183,80 @@ class DiscordServing():
 
         return (data,)
 
+class WebSocketServing():
+    def __init__(self):
+        self.data_ready = threading.Event()
+        self.data = deque()
+        self.ws_running = False
+        self.websocket_url= None
+        self.ws = None
+        pass
+    def on_message(self,ws,message):
+        print('Got message')
+        print(message)
+        try:
+            parsed = json.loads(message)
+            self.data.append(parsed)
+            self.data_ready.set()
+        except Exception as e:
+            print("Error parsing JSON", e)
+        
+
+    def ws_runner(self):
+        self.ws = websocket.WebSocketApp( self.websocket_url, #"wss://localhost:8080"
+                              on_message=self.on_message,)
+        self.ws.run_forever(reconnect=1)
+
+    def get_data(self):
+        if not self.data:
+            self.data_ready.wait()
+        data = self.data.popleft()
+        self.data_ready.clear()
+        return data
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "websocket_url": ("STRING", {
+                    "multiline": False,
+                    "default": ""
+                })
+            }
+        }
+
+    RETURN_TYPES = ("SERVING_CONFIG",)
+    RETURN_NAMES = ("Serving config",)
+
+    FUNCTION = "serve"
+
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        return float("NaN")
+    # OUTPUT_NODE = False
+
+    CATEGORY = "Serving-Toolkit"
+
+    def serve(self, websocket_url):
+        if not self.ws_running:
+            self.websocket_url = websocket_url
+            threading.Thread(target=self.ws_runner).start()
+            print("WS Client running")
+            self.ws_running = True
+
+        data = self.get_data()
+        def serve_image_function(image, frame_duration):
+                    image_file = tensorToImageConversion(image, frame_duration)
+                    base64_img = base64.b64encode(image_file.read()).decode('utf-8')
+                    response= {
+                        "base64_img":base64_img,
+                        "_requestId":data["_requestId"] # It's assumed that it will exist.
+                    }
+                    self.ws.send(json.dumps(response))
+        data["serve_image_function"] = serve_image_function
+
+        return (data,)
+
 
 # A dictionary that contains all nodes you want to export with their names
 # NOTE: names should be globally unique
@@ -185,13 +264,15 @@ NODE_CLASS_MAPPINGS = {
     "ServingOutput": ServingOutput,
     "ServingInputText": ServingInputText,
     "ServingInputNumber": ServingInputNumber,
-    "DiscordServing": DiscordServing
+    "DiscordServing": DiscordServing,
+    "WebSocketServing": WebSocketServing
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ServingOutput": "Serving Output",
     "DiscordServing": "Discord Serving",
+    "WebSocketServing": "WebSocket Serving",
     "ServingInputText": "Serving Input Text",
     "ServingInputNumber": "Serving Input Number",
 }
