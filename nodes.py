@@ -192,8 +192,6 @@ class WebSocketServing():
         self.ws = None
         pass
     def on_message(self,ws,message):
-        print('Got message')
-        print(message)
         try:
             parsed = json.loads(message)
             self.data.append(parsed)
@@ -203,7 +201,7 @@ class WebSocketServing():
         
 
     def ws_runner(self):
-        self.ws = websocket.WebSocketApp( self.websocket_url, #"wss://localhost:8080"
+        self.ws = websocket.WebSocketApp( self.websocket_url,
                               on_message=self.on_message,)
         self.ws.run_forever(reconnect=1)
 
