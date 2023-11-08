@@ -200,11 +200,29 @@ class WebSocketServing():
             print("Error parsing JSON", e)
         
 
-    def ws_runner(self):
-        self.ws = websocket.WebSocketApp( self.websocket_url,
-                              on_message=self.on_message,)
-        self.ws.run_forever(reconnect=1)
+    def on_close(self,ws):
+        print("WS Client closed!")
 
+    def on_error(self,ws,error):
+        print("WS Client error: ", error)
+        # Try to reconnect
+        time.sleep(1)
+        self.ws_runner()
+
+    def ws_runner(self):
+        print("Starting WS Client...")
+        self.ws = websocket.WebSocketApp( self.websocket_url,
+                                         
+                              on_message=self.on_message, on_close= self.on_close, on_error=self.on_error)
+        while True:
+            try:
+                self.ws.run_forever(reconnect=1,
+                                    ping_interval=10,
+                                    ping_timeout=5,)
+            except Exception as e:
+                print("WS Client error: ", e)
+                time.sleep(5)
+                continue
     def get_data(self):
         if not self.data:
             self.data_ready.wait()
