@@ -1,7 +1,9 @@
 # ComfyUI Serving Toolkit
 Welcome to the ComfyUI Serving Toolkit, a powerful tool for serving image generation workflows in Discord and other platforms (soon).
 This toolkit is designed to simplify the process of serving your ComfyUI workflow, making image generation bots easier than ever before.
-You can serve on discord, or on websockets. Checkout https://comfypixels.com for online serving
+You can serve on discord, or on websockets.
+
+If you need any help, Checkout the [Discord!](https://discord.com/invite/ehu2kAyGvQ)
 
 
 ## Features
