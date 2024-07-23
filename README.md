@@ -1,4 +1,4 @@
-# Updated to include "Serving Input Image" node, you can now send image attachments via Discord for img2img generation.
+## Updated to include "Serving Input Image" node, you can now send image attachments via Discord for img2img generation.
 
 # ComfyUI Serving Toolkit
 Welcome to the ComfyUI Serving Toolkit, a powerful tool for serving image generation workflows in Discord and other platforms (soon).
