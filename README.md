@@ -1,3 +1,5 @@
+## Updated to include "Serving Input Image" node, you can now send image attachments via Discord for img2img generation.
+
 # ComfyUI Serving Toolkit
 Welcome to the ComfyUI Serving Toolkit, a powerful tool for serving image generation workflows in Discord and other platforms (soon).
 This toolkit is designed to simplify the process of serving your ComfyUI workflow, making image generation bots easier than ever before.
@@ -7,6 +9,7 @@ If you need any help, Checkout the [Discord!](https://discord.com/invite/ehu2kAy
 
 
 ## Features
+
 * Allows both Images or videos (when in batch mode, such as animatediff - if you return more than one image it will create a video)
 * Add arguments with default values, then allow your users to use them
 * Serve from your own computer, workflow is not inserted into the images so your secrets are 100% safe
