@@ -1,3 +1,4 @@
 discord.py
 websocket-client
 rel
+opencv-python

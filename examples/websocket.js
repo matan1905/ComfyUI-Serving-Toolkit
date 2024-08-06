@@ -35,12 +35,11 @@ function saveBase64Image(base64String, filePath) {
         }
     });
 }
-console.log("Listening on 8080")
+console.log("Listening on 8080. Use ws://localhost:8080 as the websocket URL in the websocket serving node");
 
 function sendMessage(message) {
     wss.clients.forEach((client) => {
-        console.log("Messaging Everyone a hi")
-
+        console.log("Sending the prompt - ", message.prompt)
         if (client.readyState === WebSocket.OPEN) {
             client.send(message);
         }
@@ -51,5 +50,5 @@ function sendMessage(message) {
 let i = 0
 setInterval(() => sendMessage(JSON.stringify({
     _requestId: ++i,
-    prompt: "Cow"
+    prompt: "Robot saying 'it works!'",
 })), 5000)

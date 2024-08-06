@@ -389,9 +389,7 @@ class WebSocketServing():
                 "_requestId": data["_requestId"]
             }
             self.ws.send(json.dumps(response))
-        data["serve_image_function"] = serve_image_function
-        data["serve_multi_image_function"] = serve_multi_image_function
-        data["serve_text_function"] = lambda text: self.ws.send(json.dumps({"text": text, "_requestId": data["_requestId"]}))
+
         def serve_image_function(image, frame_duration):
                     image_file = tensorToImageConversion(image, frame_duration)
                     base64_img = base64.b64encode(image_file.read()).decode('utf-8')
@@ -400,7 +398,11 @@ class WebSocketServing():
                         "_requestId":data["_requestId"] # It's assumed that it will exist.
                     }
                     self.ws.send(json.dumps(response))
+
         data["serve_image_function"] = serve_image_function
+        data["serve_multi_image_function"] = serve_multi_image_function
+        data["serve_text_function"] = lambda text: self.ws.send(
+            json.dumps({"text": text, "_requestId": data["_requestId"]}))
 
         return (data,)
 
@@ -413,7 +415,9 @@ class ServingInputImage:
         return {
             "required": {
                 "serving_config": ("SERVING_CONFIG",),
-            }
+
+            },
+            "default_image": ("IMAGE",)
         }
 
     RETURN_TYPES = ("IMAGE",)
@@ -433,9 +437,11 @@ class ServingInputImage:
         image = torch.from_numpy(result)[None,]
         return image
 
-    def out(self, serving_config):
+    def out(self, serving_config, default_image = None):
         attachment_url_key = "attachment_url_0"
         if attachment_url_key not in serving_config:
+            if default_image is not None:
+                return (default_image,)
             raise ValueError("No attachment found in serving_config")
 
         attachment_url = serving_config[attachment_url_key]

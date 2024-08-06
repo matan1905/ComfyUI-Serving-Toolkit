@@ -1,5 +1,3 @@
-## Updated to include "Serving Input Image" node, you can now send image attachments via Discord for img2img generation.
-
 # ComfyUI Serving Toolkit
 Welcome to the ComfyUI Serving Toolkit, a powerful tool for serving image generation workflows in Discord and other platforms (soon).
 This toolkit is designed to simplify the process of serving your ComfyUI workflow, making image generation bots easier than ever before.
@@ -55,6 +53,11 @@ Outputs:
 
 This will connect to a websocket and wait for JSON of {_requestId, prompt, arguments} and will return a json of {_requestId, base64_img}
 You can see an example ws server over at examples/websocket.js 
+to run it you would need to navigate to the examples folder and run these commands: 
+```
+npm install
+node websocket.js
+```
 
 Inputs:
 * websocket_url - the url of the websocket you connect to, if you use the example it will be ws://localhost:8080
