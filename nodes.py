@@ -48,6 +48,33 @@ class ServingOutput:
         return {}
 
 
+
+class ServingTextOutput:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "serving_config": ("SERVING_CONFIG",),
+                "text": ("STRING", {"multiline": True, "default": ""}),
+            },
+        }
+
+    RETURN_TYPES = ()
+    FUNCTION = "out"
+    OUTPUT_NODE = True
+    CATEGORY = "Serving-Toolkit"
+
+    def out(self, serving_config, text):
+        if "serve_text_function" in serving_config:
+            serving_config["serve_text_function"](text)
+        else:
+            print("Warning: serve_text_function not found in serving_config")
+        return {}
+
+
 class ServingInputText:
     def __init__(self):
         # start listening to api/discord
@@ -104,7 +131,8 @@ class ServingInputNumber:
             }
         }
 
-    RETURN_TYPES = ("FLOAT", "INT")
+    RETURN_TYPES = ("FLOAT", "INT", "STRING")
+    RETURN_NAMES = ("float_value", "int_value", "number_text")
 
     FUNCTION = "out"
 
@@ -116,8 +144,43 @@ class ServingInputNumber:
             val = serving_config[argument]
         valFloat = min(max(float(val), min_value), max_value) // step * step
         valInt = round(valFloat)
-        return (valFloat,valInt)
+        number_text = str(valFloat)
+        return (valFloat, valInt, number_text)
 
+
+class ServingMultiImageOutput:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "serving_config": ("SERVING_CONFIG",),
+                "images": ("IMAGE",),
+            },
+        }
+
+    RETURN_TYPES = ()
+    FUNCTION = "out"
+    OUTPUT_NODE = True
+    CATEGORY = "Serving-Toolkit"
+
+    def out(self, serving_config, images):
+        if "serve_multi_image_function" in serving_config:
+            print(f"MultiImageOutput: Received {images.shape[0]} images")
+            serve_func = serving_config["serve_multi_image_function"]
+            if asyncio.iscoroutinefunction(serve_func):
+                future = asyncio.run_coroutine_threadsafe(serve_func(images), discord_client.loop)
+                try:
+                    future.result(timeout=60)  # Wait for up to 60 seconds
+                except Exception as e:
+                    print(f"Error sending images: {str(e)}")
+            else:
+                serve_func(images)
+        else:
+            print("Warning: serve_multi_image_function not found in serving_config")
+        return {}
 
 class DiscordServing():
     discord_running = False
@@ -177,10 +240,50 @@ class DiscordServing():
             @discord_client.command(name=command_name)
             async def execute(ctx):
                 parsed_data = parse_command_string(ctx.message.content,command_name)
+
+                async def serve_multi_image_function(images):
+                    discord_files = []
+                    for i, img in enumerate(images):
+                        try:
+                            if isinstance(img, np.ndarray):
+                                img_np = img
+                            else:
+                                img_np = img.cpu().numpy()
+
+                            if img_np.dtype != np.uint8:
+                                img_np = (img_np * 255).astype(np.uint8)
+
+                            if len(img_np.shape) == 2:
+                                img_np = np.stack([img_np] * 3, axis=-1)
+                            elif len(img_np.shape) == 3 and img_np.shape[2] == 1:
+                                img_np = np.concatenate([img_np] * 3, axis=2)
+                            elif img_np.shape[2] == 4:
+                                img_np = img_np[:, :, :3]
+
+                            img_pil = Image.fromarray(img_np)
+                            img_bytes = io.BytesIO()
+                            img_pil.save(img_bytes, format='PNG')
+                            img_bytes.seek(0)
+                            discord_files.append(discord.File(img_bytes, filename=f'image_{i}.png'))
+                        except Exception as e:
+                            print(f"Error processing image {i + 1}: {str(e)}")
+
+                    try:
+                        print("Attempting to send images...")
+                        await ctx.reply(files=discord_files)
+                        print("Images sent successfully")
+                    except Exception as e:
+                        print(f"Error sending images: {str(e)}")
+
                 def serve_image_function(image, frame_duration):
                     image_file = tensorToImageConversion(image, frame_duration)
                     asyncio.run_coroutine_threadsafe(ctx.reply(file=discord.File(image_file, filename='image.webp')), discord_client.loop)
                 parsed_data["serve_image_function"] = serve_image_function
+                parsed_data["serve_multi_image_function"] = serve_multi_image_function
+                parsed_data["serve_text_function"] = lambda text: asyncio.run_coroutine_threadsafe(
+                    ctx.reply(content=text), discord_client.loop)
+                parsed_data.update(
+                    {f"attachment_url_{i}": attachment.url for i, attachment in enumerate(ctx.message.attachments)})
                 parsed_data.update({f"attachment_url_{i}": attachment.url for i, attachment in enumerate(ctx.message.attachments)}) # populates all the attachments urls
                 self.data.append(parsed_data)
                 self.data_ready.set()
@@ -267,6 +370,28 @@ class WebSocketServing():
             self.ws_running = True
 
         data = self.get_data()
+        def serve_multi_image_function(images):
+            base64_images = []
+            for img in images:
+                img_np = (img.cpu().numpy() * 255).astype(np.uint8)
+                if len(img_np.shape) == 3:
+                    img_np = np.expand_dims(img_np, axis=-1)
+                if img_np.shape[-1] == 4:
+                    img_np = img_np[:,:,:3]
+                img_pil = Image.fromarray(img_np.squeeze(), 'RGB')
+                img_bytes = io.BytesIO()
+                img_pil.save(img_bytes, format='PNG')
+                img_bytes.seek(0)
+                base64_img = base64.b64encode(img_bytes.getvalue()).decode('utf-8')
+                base64_images.append(base64_img)
+            response = {
+                "base64_images": base64_images,
+                "_requestId": data["_requestId"]
+            }
+            self.ws.send(json.dumps(response))
+        data["serve_image_function"] = serve_image_function
+        data["serve_multi_image_function"] = serve_multi_image_function
+        data["serve_text_function"] = lambda text: self.ws.send(json.dumps({"text": text, "_requestId": data["_requestId"]}))
         def serve_image_function(image, frame_duration):
                     image_file = tensorToImageConversion(image, frame_duration)
                     base64_img = base64.b64encode(image_file.read()).decode('utf-8')
@@ -334,16 +459,20 @@ NODE_CLASS_MAPPINGS = {
     "ServingInputNumber": ServingInputNumber,
     "DiscordServing": DiscordServing,
     "WebSocketServing": WebSocketServing,
-    "ServingInputImage": ServingInputImage
+    "ServingInputImage": ServingInputImage,
+    "ServingTextOutput": ServingTextOutput,
+    "ServingMultiImageOutput": ServingMultiImageOutput
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ServingOutput": "Serving Output",
+    "ServingOutput": "Serving Image/Video Output",
     "DiscordServing": "Discord Serving",
     "WebSocketServing": "WebSocket Serving",
     "ServingInputText": "Serving Input Text",
     "ServingInputNumber": "Serving Input Number",
-    "ServingInputImage": "Serving Input Image"
+    "ServingInputImage": "Serving Input Image",
+    "ServingTextOutput": "Serving Text Output",
+    "ServingMultiImageOutput": "Serving Multi-Image Output"
 }
 
