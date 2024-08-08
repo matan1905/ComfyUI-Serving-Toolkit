@@ -109,6 +109,7 @@ class ServingInputText:
             return (default,)
         return (serving_config[argument],)
 
+
 class ServingInputNumber:
     def __init__(self):
         # start listening to api/discord
@@ -458,6 +459,58 @@ class ServingInputImage:
         return (self.load_image(base64_img),)
 
 
+class ServingInputImageAsLatent:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "serving_config": ("SERVING_CONFIG",),
+                "vae": ("VAE",),
+                "default_latent": ("LATENT",)
+            },
+        }
+
+    RETURN_TYPES = ("LATENT",)
+    FUNCTION = "encode"
+    CATEGORY = "Serving-Toolkit"
+
+    # Todo: this is a copy of the ServingInputImage class, should be refactored
+    def convert_color(self, image):
+        if len(image.shape) > 2 and image.shape[2] >= 4:
+            return cv2.cvtColor(image, cv2.COLOR_BGRA2RGB)
+        return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    def load_image(self, base64_str):
+        nparr = np.frombuffer(base64.b64decode(base64_str), np.uint8)
+        result = cv2.imdecode(nparr, cv2.IMREAD_UNCHANGED)
+        result = self.convert_color(result)
+        result = result.astype(np.float32) / 255.0
+        image = torch.from_numpy(result)[None,]
+        return image
+
+    def out(self, vae, serving_config, default_latent = None):
+        attachment_url_key = "attachment_url_0"
+        if attachment_url_key not in serving_config:
+            if default_latent is not None:
+                return (default_latent,)
+            raise ValueError("No attachment found in serving_config")
+
+        attachment_url = serving_config[attachment_url_key]
+        response = requests.get(attachment_url)
+        image = Image.open(io.BytesIO(response.content)).convert("RGB")
+
+        # Convert PIL image to base64 string
+        image_file = io.BytesIO()
+        image.save(image_file, format='PNG')
+        image_file.seek(0)
+        base64_img = base64.b64encode(image_file.read()).decode('utf-8')
+
+        # Use the base64 string to get the image tensor
+        t = vae.encode(self.load_image(base64_img)[:, :, :, :3])
+        return ({"samples": t},)
+
+
+
 # A dictionary that contains all nodes you want to export with their names
 NODE_CLASS_MAPPINGS = {
     "ServingOutput": ServingOutput,
@@ -467,7 +520,8 @@ NODE_CLASS_MAPPINGS = {
     "WebSocketServing": WebSocketServing,
     "ServingInputImage": ServingInputImage,
     "ServingTextOutput": ServingTextOutput,
-    "ServingMultiImageOutput": ServingMultiImageOutput
+    "ServingMultiImageOutput": ServingMultiImageOutput,
+    "ServingInputImageAsLatent": ServingInputImageAsLatent
 }
 
 # A dictionary that contains the friendly/humanly readable titles for the nodes
@@ -479,6 +533,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ServingInputNumber": "Serving Input Number",
     "ServingInputImage": "Serving Input Image",
     "ServingTextOutput": "Serving Text Output",
-    "ServingMultiImageOutput": "Serving Multi-Image Output"
+    "ServingMultiImageOutput": "Serving Multi-Image Output",
+    "ServingInputImageAsLatent": "Serving Input Image as Latent"
 }
 
