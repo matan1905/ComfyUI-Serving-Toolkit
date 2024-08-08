@@ -471,7 +471,7 @@ class ServingInputImageAsLatent:
         }
 
     RETURN_TYPES = ("LATENT",)
-    FUNCTION = "encode"
+    FUNCTION = "out"
     CATEGORY = "Serving-Toolkit"
 
     # Todo: this is a copy of the ServingInputImage class, should be refactored
