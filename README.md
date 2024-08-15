@@ -3,7 +3,7 @@ Welcome to the ComfyUI Serving Toolkit, a powerful tool for serving image genera
 This toolkit is designed to simplify the process of serving your ComfyUI workflow, making image generation bots easier than ever before.
 You can serve on discord, or on websockets.
 
-If you need any help, Checkout the [Discord!](https://discord.com/invite/ehu2kAyGvQ)
+If you need any help, Checkout the [Discord!](https://discord.gg/AyHFchFZuV)
 
 
 ## Features
@@ -33,8 +33,7 @@ After setting up your workflow, In order for the serving to always be up, you ne
 
 ![image](https://github.com/matan1905/ComfyUI-Serving-Toolkit/assets/24731932/d8f7b486-725d-4934-b72d-1a042b5f355a)
 
-#### This will require you to keep your ComfyUI and computer running. If you want to host your workflow, you can use [vast.ai](https://cloud.vast.ai/?ref_id=93071)
-
+#### This will require you to keep your ComfyUI and computer running.
 
 ## Nodes
 **DiscordServing**
