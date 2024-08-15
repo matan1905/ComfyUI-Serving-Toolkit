@@ -418,7 +418,9 @@ class ServingInputImage:
                 "serving_config": ("SERVING_CONFIG",),
 
             },
-            "default_image": ("IMAGE",)
+            "optional":{
+                "default_image": ("IMAGE",)
+            }
         }
 
     RETURN_TYPES = ("IMAGE",)
