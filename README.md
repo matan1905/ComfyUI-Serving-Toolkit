@@ -11,6 +11,7 @@ If you need any help, Checkout the [Discord!](https://discord.gg/AyHFchFZuV)
 * Allows both Images or videos (when in batch mode, such as animatediff - if you return more than one image it will create a video)
 * Add arguments with default values, then allow your users to use them
 * Serve from your own computer, workflow is not inserted into the images so your secrets are 100% safe
+* Support for multiple serving options: Discord, Telegram, HTTP and WebSockets
 
 ## Installation
 [Use ComfyUI Manager](https://github.com/ltdrdata/ComfyUI-Manager)
@@ -95,7 +96,7 @@ Inputs that are not in ServingInputText:
 * min_value - the minimum value of this argument
 * step - the steps of this value (setting this to 1 will ensure only whole numbers, 0.5 will allow jumps of half etc)
 
-**ServingOutput**
+**Serving Image/Video Output**
 
 Allows you to return an image/video back to the request
 Inputs:
@@ -103,7 +104,57 @@ Inputs:
 * duration - in the case of a video, what is the time in miliseconds each frame should appear? if you have an FPS number you can use 1000/FPS to calculate the duration value
 
 
+**TelegramServing**
 
+This node allows you to serve your workflow via Telegram. It listens for commands and processes them, enabling interaction with your ComfyUI workflow through a Telegram bot.
+
+Inputs:
+* telegram_token - Your Telegram bot token obtained from the BotFather
+* command_name - The command used to generate, without the '/'. Defaults to 'generate' (so you would have to do /generate <your prompt> --your_argument1 <argument value>)
+
+Outputs:
+* Serving Config - A basic reference for this serving, used by the other nodes of this toolkit to get arguments and return images.
+
+**HTTPServing**
+
+This node enables serving your workflow via HTTP, allowing you to interact with your ComfyUI workflow through HTTP POST requests.
+
+Inputs:
+* port - The port number on which the HTTP server will run. Defaults to 8000.
+
+Outputs:
+* Serving Config - A basic reference for this serving, used by the other nodes of this toolkit to get arguments and return images.
+
+**ServingMultiImageOutput**
+
+Allows you to return multiple images back to the request. This is useful for batch processing or when generating animations.
+
+Inputs:
+* serving_config - A config made by a serving node
+* images - The generated images
+
+**ServingInputImage**
+
+Allows you to input images from the serving platform (e.g., attachments in Discord, Telegram, or files sent via HTTP).
+
+Inputs:
+* serving_config - A config made by a serving node
+* default_image - (Optional) A default image to use if no attachment is found
+
+Outputs:
+* image - The input image as a tensor
+
+**ServingInputImageAsLatent**
+
+Similar to ServingInputImage, but converts the input image directly into a latent representation for use in your workflow.
+
+Inputs:
+* serving_config - A config made by a serving node
+* vae - The VAE model to use for encoding
+* default_latent - (Optional) A default latent to use if no attachment is found
+
+Outputs:
+* latent - The input image encoded as a latent
 
 
 
