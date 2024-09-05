@@ -1,0 +1,96 @@
+# Generic Instructions for Editing Files
+
+When making changes to files, use the following formats:
+
+# File /path/to/file::[instruction?]:[arguments?]
+[Content (depends on instruction)]
+# EndFile /path/to/file
+
+## Create or Replace Entire Files
+
+To create a new file or completely replace an existing file's content:
+
+# File /path/to/file
+[Entire content of the file]
+# EndFile /path/to/file
+
+**CAUTION:** This will remove all existing content in the file. Use with care!
+
+## Edit a Section
+
+To make targeted changes to a specific part of a file:
+
+# File /path/to/file::edit-section
+[Minimal unique context before the change. IMPORTANT - SHOULD BE AS LITTLE AS POSSIBLE]
+---[Line to be removed]
+[line to keep]
++++[Line to be added]
+# EndFile /path/to/file
+
+For example, if you wanted to add a float conversion to the add function, you could do it like this:
+# File /utils/math.py::edit-section
+def add(a, b):
+---    return a + b
++++    return float(a) + float(b)
+# EndFile /utils/add.py
+In this example, the context is the function name - it helped the parser find the function.
+The '---' line is also part of the context - because we know that we need to remove them we can use this to identify the section.
+The '+++' lines are the lines we want to add.
+The final result will look like this:
+```
+... other code ...
+def add(a, b):
+    return float(a) + float(b)
+... other code ...
+```
+
+**Key principles for edit-section:**
+Minimal Context: Include only enough context to uniquely identify the section to be changed.
+Multiple Edits: you are required to use separate edit-section blocks for different changes in the same file.
+You may start directly with a '---' line, as long as your section is unique enough to identify the section to be changed.
+Every line you plan to remove or add should include --- or +++ at the beginning of the line.
+Lines that you add that do not have '+++' at the beginning WILL BE IGNORED!
+sometimes you need to add a line to a list, don't forget to add the comma at the end of the previous line (by removing the line and adding it again as a patch)
+NEVER USE A LINE WITH ONLY +++ OR --- AT THE BEGINNING OF THE LINE it causes bugs
+
+## Inject Content at a Specific Line
+
+To add new content at a specific line number:
+
+# File /path/to/file::inject-at-line:line-number
+[Content to be injected]
+# EndFile /path/to/file
+
+THE FILE MUST ALREADY EXIST - IF YOU WANT TO CREATE A NEW FILE, USE:
+# File /path/to/file
+[Content to be injected]
+# EndFile /path/to/file
+INSTEAD OF TRYING TO INJECT A LINE TO A NON-EXISTENT FILE.
+
+## Delete an Entire File
+
+To remove a file completely:
+
+# File /path/to/file::delete-file
+# EndFile /path/to/file
+
+THIS WILL DELETE THE ENTIRE FILE - USE WITH CAUTION!
+IF YOU WANT TO REPLACE THE CONTENT OF A FILE, USE THE EDIT-SECTION INSTRUCTION INSTEAD.
+
+## General Guidelines
+
+1. Make minimal, precise edits.
+2. Use multiple edit blocks for different changes in the same file.
+3. Avoid large, sweeping changes in a single edit when possible.
+4. Do not wrap the file blocks in markdown code blocks.
+5. Always consider the context and purpose of the edit.
+6. Make sure you ALWAYS use a matching EndFile <path> at the end of EVERY one of your blocks.
+7. When you are ONLY adding content (such as in imports), use the inject-at-line instruction.
+8. When you need to replace a line, use the edit-section instruction by prepending the line with --- and adding the new line with +++.
+9. If you add new functionality, consider adding it as a new file.
+10. NEVER EVER ADD ANY "... rest of the code" KIND OF LINES. EITHER USE INJECT-AT-LINE OR EDIT-SECTION INSTRUCTIONS
+Remember, the goal is to feed your answer into a parser that will create a pull request with the changes you want to make.
+PLEASE DON'T BE LAZY
+
+To make sure you read everything, please write this at the start of your answer:
+"I will make sure to follow every the guidelines above with utmost care"
