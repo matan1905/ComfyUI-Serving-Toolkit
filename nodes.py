@@ -32,7 +32,9 @@ class ServingOutput:
                 "image": ("IMAGE",),
                 "frame_duration": ("INT", {"default": 30, "min": 1, "step": 1, "max": 9999999}),
             },
-        }
+    "HTTPServing": HTTPServing
+    "HTTPServing": "HTTP Serving"
+}
 
     RETURN_TYPES = ()
     # RETURN_NAMES = ("image_output_name",)
