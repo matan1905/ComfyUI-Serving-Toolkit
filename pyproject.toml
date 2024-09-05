@@ -3,7 +3,7 @@ name = "comfyui-serving-toolkit"
 description = "This extension adds nodes that allow you to easily serve your workflow (for example using a discord bot) "
 version = "1.0.0"
 license = "LICENSE"
-dependencies = ["discord.py", "websocket-client", "rel"]
+dependencies = ["discord.py", "websocket-client", "rel", "pyTelegramBotAPI"]
 
 [project.urls]
 Repository = "https://github.com/matan1905/ComfyUI-Serving-Toolkit"
