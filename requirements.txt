@@ -1,4 +1,5 @@
 discord.py
 websocket-client
 rel
+pyTelegramBotAPI
 opencv-python
