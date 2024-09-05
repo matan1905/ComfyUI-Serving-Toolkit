@@ -32,8 +32,6 @@ class ServingOutput:
                 "image": ("IMAGE",),
                 "frame_duration": ("INT", {"default": 30, "min": 1, "step": 1, "max": 9999999}),
             },
-    "TelegramServing": TelegramServing
-    "TelegramServing": "Telegram Serving"
 }
 
     RETURN_TYPES = ()

@@ -20,6 +20,7 @@ class TelegramServing:
     def telegram_handler(self):
         @self.bot.message_handler(commands=[self.command_name])
         def handle_command(message):
+            print(f"Received command from {message.chat.id}: {message.text}")
             parsed_data = parse_command_string(message.text, self.command_name)
             
             async def serve_multi_image_function(images):
@@ -36,7 +37,7 @@ class TelegramServing:
 
             def serve_image_function(image, frame_duration):
                 image_file = tensorToImageConversion(image, frame_duration)
-                self.bot.send_document(message.chat.id, image_file, visible_file_name='image.webp')
+                self.bot.send_photo(message.chat.id, image_file)
 
             parsed_data["serve_image_function"] = serve_image_function
             parsed_data["serve_multi_image_function"] = serve_multi_image_function
@@ -78,6 +79,9 @@ class TelegramServing:
     RETURN_NAMES = ("Serving config",)
     FUNCTION = "serve"
     CATEGORY = "Serving-Toolkit"
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        return float("NaN")
 
     def serve(self, telegram_token, command_name):
         if not self.telegram_running:
