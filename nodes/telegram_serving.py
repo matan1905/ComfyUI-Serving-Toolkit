@@ -73,7 +73,7 @@ class TelegramServing:
                 "command_name": ("STRING", {
                     "multiline": False,
                     "default": "generate"
-                })
+                }),
             "optional": {
                 "allowed_user": ("STRING", {
                     "multiline": False,
