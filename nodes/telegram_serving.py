@@ -20,6 +20,8 @@ class TelegramServing:
     def telegram_handler(self):
         @self.bot.message_handler(commands=[self.command_name])
         def handle_command(message):
+            if self.allowed_user and message.from_user.username != self.allowed_user:
+                return  # Silently ignore messages from unauthorized users
             print(f"Received command from {message.chat.id}: {message.text}")
             parsed_data = parse_command_string(message.text, self.command_name)
             
@@ -72,7 +74,13 @@ class TelegramServing:
                     "multiline": False,
                     "default": "generate"
                 })
+            "optional": {
+                "allowed_user": ("STRING", {
+                    "multiline": False,
+                    "default": ""
+                })
             }
+        }
         }
 
     RETURN_TYPES = ("SERVING_CONFIG",)
@@ -83,10 +91,11 @@ class TelegramServing:
     def IS_CHANGED(cls, **kwargs):
         return float("NaN")
 
-    def serve(self, telegram_token, command_name):
+    def serve(self, telegram_token, command_name, allowed_user=""):
         if not self.telegram_running:
             self.bot = telebot.TeleBot(telegram_token)
             self.command_name = command_name
+            self.allowed_user = allowed_user
             threading.Thread(target=self.telegram_handler, daemon=True).start()
             print(f"Telegram bot running, listening for /{command_name} commands")
             self.telegram_running = True
