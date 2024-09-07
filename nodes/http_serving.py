@@ -10,6 +10,7 @@ from PIL import Image
 
 class HTTPServing:
     def __init__(self):
+        self.enable_cross_origin_requests = None
         self.data_ready = threading.Event()
         self.data = deque()
         self.http_running = False
@@ -32,6 +33,12 @@ class HTTPServing:
                 response = self.output
                 self2.send_response(200)
                 self2.send_header('Content-type', 'application/json')
+                # Cors
+                if(self.enable_cross_origin_requests):
+                    self2.send_header('Access-Control-Allow-Origin', '*')
+                    self2.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+                    self2.send_header('Access-Control-Allow-Headers', 'X-Requested-With')
+
                 self2.end_headers()
                 self2.wfile.write(json.dumps(response).encode('utf-8'))
 
@@ -61,6 +68,7 @@ class HTTPServing:
         return {
             "required": {
                 "port": ("INT", {"default": 8000, "min": 1, "max": 65535}),
+                "enable_cross_origin_requests": ("BOOLEAN", {"default": False}),
             }
         }
 
@@ -72,7 +80,9 @@ class HTTPServing:
     def IS_CHANGED(cls, **kwargs):
         return float("NaN")
 
-    def serve(self, port):
+    def serve(self, port,enable_cross_origin_requests):
+        self.enable_cross_origin_requests = enable_cross_origin_requests
+
         if not self.http_running:
             self.port = port
             threading.Thread(target=self.http_handler, daemon=True).start()
