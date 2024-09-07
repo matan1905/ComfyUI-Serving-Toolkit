@@ -28,6 +28,7 @@ class HTTPServing:
                 self.data_ready.set()
 
                 self.output_ready.wait()
+                self.output_ready.clear()
                 response = self.output
                 self2.send_response(200)
                 self2.send_header('Content-type', 'application/json')
