@@ -68,6 +68,9 @@ class HTTPServing:
     RETURN_NAMES = ("Serving config",)
     FUNCTION = "serve"
     CATEGORY = "Serving-Toolkit"
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        return float("NaN")
 
     def serve(self, port):
         if not self.http_running:
