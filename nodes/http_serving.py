@@ -21,6 +21,15 @@ class HTTPServing:
 
     def http_handler(self):
         class RequestHandler(BaseHTTPRequestHandler):
+            def do_OPTIONS(self2):
+                if(self.enable_cross_origin_requests):
+                    self2.send_response(200)
+                    self2.send_header('Access-Control-Allow-Origin', '*')
+                    self2.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+                    self2.send_header('Access-Control-Allow-Headers', '*')
+                    self2.end_headers()
+
+
             def do_POST(self2):
                 content_length = int(self2.headers['Content-Length'])
                 post_data = self2.rfile.read(content_length)
@@ -37,7 +46,7 @@ class HTTPServing:
                 if(self.enable_cross_origin_requests):
                     self2.send_header('Access-Control-Allow-Origin', '*')
                     self2.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-                    self2.send_header('Access-Control-Allow-Headers', 'X-Requested-With')
+                    self2.send_header('Access-Control-Allow-Headers', '*')
 
                 self2.end_headers()
                 self2.wfile.write(json.dumps(response).encode('utf-8'))
