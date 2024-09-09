@@ -16,14 +16,15 @@ class TelegramServing:
         self.telegram_running = False
         self.bot = None
         self.command_name = None
-        self.allowed_user = None
+        self.allowed_chat_ids = None
 
     def telegram_handler(self):
         @self.bot.message_handler(commands=[self.command_name])
         def handle_command(message):
-            if self.allowed_user and message.from_user.username != self.allowed_user:
-                print(f"Allowed user: {self.allowed_user}, but got message from user: {message.from_user.username}! Skipping message.")
-                return  # Silently ignore messages from unauthorized users
+            chat_id=str(message.chat.id)
+            if self.allowed_chat_ids and not chat_id in self.allowed_chat_ids:
+                print(f"Allowed chatids are: {self.allowed_chat_ids}, but got message from user: {message.from_user.username}, chatid: {chat_id} ! Skipping message.")
+                return  # Silently ignore messages
             print(f"Received command from {message.chat.id}: {message.text}")
             parsed_data = parse_command_string(message.text, self.command_name)
             
@@ -78,8 +79,8 @@ class TelegramServing:
                 }),
         },
             "optional": {
-                "allowed_user": ("STRING", {
-                    "multiline": False,
+                "allowed_chat_ids": ("STRING", {
+                    "multiline": True,
                     "default": ""
                 })
             }
@@ -93,8 +94,8 @@ class TelegramServing:
     def IS_CHANGED(cls, **kwargs):
         return float("NaN")
 
-    def serve(self, telegram_token, command_name, allowed_user=""):
-        self.allowed_user = allowed_user
+    def serve(self, telegram_token, command_name, allowed_chat_ids=""):
+        self.allowed_chat_ids = allowed_chat_ids
         if not self.telegram_running:
             self.bot = telebot.TeleBot(telegram_token)
             self.command_name = command_name
