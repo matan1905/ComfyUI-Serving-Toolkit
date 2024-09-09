@@ -21,8 +21,9 @@ class TelegramServing:
     def telegram_handler(self):
         @self.bot.message_handler(commands=[self.command_name])
         def handle_command(message):
-            if self.allowed_user and message.from_user.username != self.allowed_user:
-                print(f"Allowed user: {self.allowed_user}, but got message from user: {message.from_user.username}! Skipping message.")
+            userid=str(message.chat.id)
+            if not userid in self.allowed_user:
+                print(f"Allowed chatids are: {self.allowed_user}, but got message from user: {message.from_user.username}, chatid: {userid} ! Skipping message.")
                 return  # Silently ignore messages from unauthorized users
             print(f"Received command from {message.chat.id}: {message.text}")
             parsed_data = parse_command_string(message.text, self.command_name)
