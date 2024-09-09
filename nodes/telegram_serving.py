@@ -80,7 +80,7 @@ class TelegramServing:
         },
             "optional": {
                 "allowed_user": ("STRING", {
-                    "multiline": False,
+                    "multiline": True,
                     "default": ""
                 })
             }
