@@ -98,6 +98,7 @@ class HTTPServing:
             print(f"HTTP Server running on port {port}")
             self.http_running = True
 
+        self.output_ready.clear() # Prevent deadlock if failed in previous run
         data = self.get_data()
 
         def serve_multi_image_function(images):
