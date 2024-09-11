@@ -33,7 +33,11 @@ class HTTPServing:
             def do_POST(self2):
                 content_length = int(self2.headers['Content-Length'])
                 post_data = self2.rfile.read(content_length)
-                data = json.loads(post_data.decode('utf-8'))
+        data = {}
+        form_data = post_data.decode('utf-8').split('&')
+        for item in form_data:
+            key, value = item.split('=')
+            data[key] = value.replace('+', ' ')
                 self.data.append(data)
                 self.data_ready.set()
 
@@ -59,7 +63,21 @@ class HTTPServing:
                     self2.send_response(200)
                     self2.send_header('Content-type', 'text/html')
                     self2.end_headers()
-                    self2.wfile.write(b"HTTP Serving is running, to send data make a POST request to this endpoint.")
+            html_form = """
+            <html>
+            <body>
+            <h2>ComfyUI HTTP Serving</h2>
+            <form method="post">
+                <label for="prompt">Prompt:</label><br>
+                <textarea name="prompt" rows="4" cols="50"></textarea><br>
+                <label for="negative_prompt">Negative Prompt:</label><br>
+                <textarea name="negative_prompt" rows="4" cols="50"></textarea><br>
+                <input type="submit" value="Generate">
+            </form>
+            </body>
+            </html>
+            """
+            self2.wfile.write(html_form.encode('utf-8'))
 
         self.server = HTTPServer(('', self.port), RequestHandler)
         print(f"HTTP Server running on port {self.port}")
