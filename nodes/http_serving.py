@@ -6,6 +6,8 @@ import base64
 from io import BytesIO
 from .utils import tensorToImageConversion
 from PIL import Image
+        self.html_content = None
+        self.html_content = html_content
 
 
 class HTTPServing:
@@ -59,7 +61,7 @@ class HTTPServing:
                     self2.send_response(200)
                     self2.send_header('Content-type', 'text/html')
                     self2.end_headers()
-                    self2.wfile.write(b"HTTP Serving is running, to send data make a POST request to this endpoint.")
+                    self2.wfile.write(self.html_content.encode('utf-8'))
 
         self.server = HTTPServer(('', self.port), RequestHandler)
         print(f"HTTP Server running on port {self.port}")
@@ -78,6 +80,7 @@ class HTTPServing:
             "required": {
                 "port": ("INT", {"default": 8000, "min": 1, "max": 65535}),
                 "enable_cross_origin_requests": ("BOOLEAN", {"default": False}),
+                "html_content": ("STRING", {"multiline": True, "default": "<html><body><h1>HTTP Serving is running</h1><p>To send data, make a POST request to this endpoint.</p></body></html>"})
             }
         }
 
@@ -89,7 +92,7 @@ class HTTPServing:
     def IS_CHANGED(cls, **kwargs):
         return float("NaN")
 
-    def serve(self, port,enable_cross_origin_requests):
+    def serve(self, port, enable_cross_origin_requests, html_content):
         self.enable_cross_origin_requests = enable_cross_origin_requests
 
         if not self.http_running:
