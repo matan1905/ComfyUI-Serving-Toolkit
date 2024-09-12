@@ -18,17 +18,17 @@ class HTTPServing:
         self.server = None
         self.output_ready = threading.Event()
         self.output = None
+        self.html_content = None
 
     def http_handler(self):
         class RequestHandler(BaseHTTPRequestHandler):
             def do_OPTIONS(self2):
-                if(self.enable_cross_origin_requests):
+                if (self.enable_cross_origin_requests):
                     self2.send_response(200)
                     self2.send_header('Access-Control-Allow-Origin', '*')
                     self2.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
                     self2.send_header('Access-Control-Allow-Headers', '*')
                     self2.end_headers()
-
 
             def do_POST(self2):
                 content_length = int(self2.headers['Content-Length'])
@@ -43,7 +43,7 @@ class HTTPServing:
                 self2.send_response(200)
                 self2.send_header('Content-type', 'application/json')
                 # Cors
-                if(self.enable_cross_origin_requests):
+                if (self.enable_cross_origin_requests):
                     self2.send_header('Access-Control-Allow-Origin', '*')
                     self2.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
                     self2.send_header('Access-Control-Allow-Headers', '*')
@@ -51,15 +51,12 @@ class HTTPServing:
                 self2.end_headers()
                 self2.wfile.write(json.dumps(response).encode('utf-8'))
 
-
-
-
             def do_GET(self2):
                 if self2.path == '/':
                     self2.send_response(200)
                     self2.send_header('Content-type', 'text/html')
                     self2.end_headers()
-                    self2.wfile.write(b"HTTP Serving is running, to send data make a POST request to this endpoint.")
+                    self2.wfile.write(self.html_content.encode('utf-8'))
 
         self.server = HTTPServer(('', self.port), RequestHandler)
         print(f"HTTP Server running on port {self.port}")
@@ -78,6 +75,28 @@ class HTTPServing:
             "required": {
                 "port": ("INT", {"default": 8000, "min": 1, "max": 65535}),
                 "enable_cross_origin_requests": ("BOOLEAN", {"default": False}),
+                "html_content": ("STRING", {"multiline": True, "default": """
+                    <!DOCTYPE html>
+                    <html>
+                    <body>
+                        <input type="text" id="prompt" value="">
+                        <button onclick="sendPost()">Send</button>
+                        <img id="resultImage" style="display:none">
+                    
+                        <script>
+                            function sendPost() {
+                                const prompt = document.getElementById('prompt').value;
+                                fetch(window.location.href, { method: 'POST', body: JSON.stringify({ prompt }) })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        document.getElementById('resultImage').src = 'data:image/png;base64,' + data.base64_img;
+                                        document.getElementById('resultImage').style.display = 'block';
+                                    });
+                            }
+                        </script>
+                    </body>
+                    </html>
+                """})
             }
         }
 
@@ -85,20 +104,21 @@ class HTTPServing:
     RETURN_NAMES = ("Serving config",)
     FUNCTION = "serve"
     CATEGORY = "Serving-Toolkit"
+
     @classmethod
     def IS_CHANGED(cls, **kwargs):
         return float("NaN")
 
-    def serve(self, port,enable_cross_origin_requests):
+    def serve(self, port, enable_cross_origin_requests, html_content):
         self.enable_cross_origin_requests = enable_cross_origin_requests
-
+        self.html_content = html_content
         if not self.http_running:
             self.port = port
             threading.Thread(target=self.http_handler, daemon=True).start()
             print(f"HTTP Server running on port {port}")
             self.http_running = True
 
-        self.output_ready.clear() # Prevent deadlock if failed in previous run
+        self.output_ready.clear()  # Prevent deadlock if failed in previous run
         data = self.get_data()
 
         def serve_multi_image_function(images):
@@ -114,7 +134,6 @@ class HTTPServing:
             }
             self.output = response
             self.output_ready.set()
-
 
         def serve_image_function(image, frame_duration):
             image_file = tensorToImageConversion(image, frame_duration)
