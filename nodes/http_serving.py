@@ -19,6 +19,7 @@ class HTTPServing:
         self.output_ready = threading.Event()
         self.output = None
         self.html_content = None
+        self.path = None
 
     def http_handler(self):
         class RequestHandler(BaseHTTPRequestHandler):
@@ -34,12 +35,15 @@ class HTTPServing:
                 content_length = int(self2.headers['Content-Length'])
                 post_data = self2.rfile.read(content_length)
                 data = json.loads(post_data.decode('utf-8'))
+                self.path = self2.path
+
                 self.data.append(data)
                 self.data_ready.set()
 
                 self.output_ready.wait()
                 self.output_ready.clear()
                 response = self.output
+                print("Response:", response)
                 self2.send_response(200)
                 self2.send_header('Content-type', 'application/json')
                 # Cors
@@ -59,7 +63,6 @@ class HTTPServing:
                     self2.wfile.write(self.html_content.encode('utf-8'))
 
         self.server = HTTPServer(('', self.port), RequestHandler)
-        print(f"HTTP Server running on port {self.port}")
         self.server.serve_forever()
 
     def get_data(self):
@@ -118,6 +121,7 @@ class HTTPServing:
             print(f"HTTP Server running on port {port}")
             self.http_running = True
 
+        self.output = None
         self.output_ready.clear()  # Prevent deadlock if failed in previous run
         data = self.get_data()
 
@@ -129,30 +133,37 @@ class HTTPServing:
                 Image.fromarray(img_np.squeeze()).save(img_bytes, format='PNG')
                 base64_img = base64.b64encode(img_bytes.getvalue()).decode('utf-8')
                 base64_images.append(base64_img)
-            response = {
-                "base64_images": base64_images,
-            }
+            response = self.output or {}
+            response["base64_images"] = base64_images
             self.output = response
-            self.output_ready.set()
 
         def serve_image_function(image, frame_duration):
             image_file = tensorToImageConversion(image, frame_duration)
             base64_img = base64.b64encode(image_file.read()).decode('utf-8')
-            response = {
-                "base64_img": base64_img,
-            }
+            response = self.output or {}
+            response["base64_img"] = base64_img
             self.output = response
-            self.output_ready.set()
 
         def serve_text_function(text):
-            response = {
-                "text": text,
-            }
+            response = self.output or {}
+            response["text"] = text
             self.output = response
+
+        def is_command(command):
+            is_it = bool(self.path) and command == self.path[1:]
+            if is_it:
+                self.path = None
+            return is_it
+
+        def finalize():
             self.output_ready.set()
+
+
 
         data["serve_image_function"] = serve_image_function
         data["serve_multi_image_function"] = serve_multi_image_function
         data["serve_text_function"] = serve_text_function
+        data["is_command"] = is_command
+        data["finalize"] = finalize
 
         return (data,)

@@ -9,25 +9,28 @@ import numpy as np
 import torch
 from .utils import tensorToImageConversion, parse_command_string
 
+
 class TelegramServing:
     def __init__(self):
         self.data_ready = threading.Event()
         self.data = deque()
         self.telegram_running = False
         self.bot = None
-        self.command_name = None
         self.allowed_chat_ids = None
 
     def telegram_handler(self):
-        @self.bot.message_handler(commands=[self.command_name])
+        @self.bot.message_handler()
         def handle_command(message):
-            chat_id=str(message.chat.id)
-            if self.allowed_chat_ids and not chat_id in self.allowed_chat_ids:
-                print(f"Allowed chatids are: {self.allowed_chat_ids}, but got message from user: {message.from_user.username}, chatid: {chat_id} ! Skipping message.")
+            chat_id = str(message.chat.id)
+            if self.allowed_chat_ids and chat_id not in self.allowed_chat_ids:
+                print(
+                    f"Allowed chatids are: {self.allowed_chat_ids}, but got message from user: {message.from_user.username}, chatid: {chat_id} ! Skipping message.")
                 return  # Silently ignore messages
+
+            command_name = message.text.split()[0][1:]  # Extract command name without '/'
             print(f"Received command from {message.chat.id}: {message.text}")
-            parsed_data = parse_command_string(message.text, self.command_name)
-            
+            parsed_data = parse_command_string(message.text, command_name)
+
             async def serve_multi_image_function(images):
                 media_group = []
                 for i, img in enumerate(images):
@@ -37,13 +40,17 @@ class TelegramServing:
                     img_pil.save(img_bytes, format='PNG')
                     img_bytes.seek(0)
                     media_group.append(types.InputMediaPhoto(img_bytes))
-                
+
                 self.bot.send_media_group(message.chat.id, media_group)
 
             def serve_image_function(image, frame_duration):
                 image_file = tensorToImageConversion(image, frame_duration)
                 self.bot.send_photo(message.chat.id, image_file)
 
+            def is_command(command):
+                return command == command_name
+
+            parsed_data["is_command"] = is_command
             parsed_data["serve_image_function"] = serve_image_function
             parsed_data["serve_multi_image_function"] = serve_multi_image_function
             parsed_data["serve_text_function"] = lambda text: self.bot.reply_to(message, text)
@@ -73,11 +80,7 @@ class TelegramServing:
                     "multiline": False,
                     "default": ""
                 }),
-                "command_name": ("STRING", {
-                    "multiline": False,
-                    "default": "generate"
-                }),
-        },
+            },
             "optional": {
                 "allowed_chat_ids": ("STRING", {
                     "multiline": True,
@@ -90,17 +93,17 @@ class TelegramServing:
     RETURN_NAMES = ("Serving config",)
     FUNCTION = "serve"
     CATEGORY = "Serving-Toolkit"
+
     @classmethod
     def IS_CHANGED(cls, **kwargs):
         return float("NaN")
 
-    def serve(self, telegram_token, command_name, allowed_chat_ids=""):
+    def serve(self, telegram_token, allowed_chat_ids=""):
         self.allowed_chat_ids = allowed_chat_ids
         if not self.telegram_running:
             self.bot = telebot.TeleBot(telegram_token)
-            self.command_name = command_name
             threading.Thread(target=self.telegram_handler, daemon=True).start()
-            print(f"Telegram bot running, listening for /{command_name} commands")
+            print("Telegram bot running, listening for all commands")
             self.telegram_running = True
 
         data = self.get_data()
