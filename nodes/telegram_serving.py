@@ -19,7 +19,7 @@ class TelegramServing:
         self.allowed_chat_ids = None
 
     def telegram_handler(self):
-        @self.bot.message_handler()
+        @self.bot.message_handler(func=lambda message: True, content_types=['photo','text'])
         def handle_command(message):
             chat_id = str(message.chat.id)
             if self.allowed_chat_ids and chat_id not in self.allowed_chat_ids:
@@ -27,9 +27,10 @@ class TelegramServing:
                     f"Allowed chatids are: {self.allowed_chat_ids}, but got message from user: {message.from_user.username}, chatid: {chat_id} ! Skipping message.")
                 return  # Silently ignore messages
 
-            command_name = message.text.split()[0][1:]  # Extract command name without '/'
-            print(f"Received command from {message.chat.id}: {message.text}")
-            parsed_data = parse_command_string(message.text, command_name)
+            text = message.caption if message.content_type == 'photo' else message.text
+            command_name = text.split()[0][1:] # Extract command name without '/'
+            print(f"Received command from {message.chat.id}: {text}")
+            parsed_data = parse_command_string(text, command_name)
 
             async def serve_multi_image_function(images):
                 media_group = []
@@ -41,11 +42,11 @@ class TelegramServing:
                     img_bytes.seek(0)
                     media_group.append(types.InputMediaPhoto(img_bytes))
 
-                self.bot.send_media_group(message.chat.id, media_group)
+                self.bot.send_media_group(message.chat.id, media_group, reply_to_message_id=message.id)
 
             def serve_image_function(image, frame_duration):
                 image_file = tensorToImageConversion(image, frame_duration)
-                self.bot.send_photo(message.chat.id, image_file)
+                self.bot.send_photo(message.chat.id, image_file, reply_to_message_id=message.id)
 
             def is_command(command):
                 return command == command_name
@@ -55,10 +56,9 @@ class TelegramServing:
             parsed_data["serve_multi_image_function"] = serve_multi_image_function
             parsed_data["serve_text_function"] = lambda text: self.bot.reply_to(message, text)
 
-            if message.document:
-                file_info = self.bot.get_file(message.document.file_id)
-                downloaded_file = self.bot.download_file(file_info.file_path)
-                parsed_data["attachment_url_0"] = downloaded_file
+            if message.photo:
+                file_info = self.bot.get_file(message.photo[2].file_id)
+                parsed_data["attachment_url_0"] = "https://api.telegram.org/file/bot{0}/{1}".format(self.bot.token, file_info.file_path)
 
             self.data.append(parsed_data)
             self.data_ready.set()
