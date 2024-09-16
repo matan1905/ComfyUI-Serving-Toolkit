@@ -15,6 +15,7 @@ import json
 import torch
 import torchvision.transforms as transforms
 import cv2
+import nodes
 
 
 
@@ -61,7 +62,7 @@ class ServingTextOutput:
         return {
             "required": {
                 "serving_config": ("SERVING_CONFIG",),
-                "text": ("STRING", {"multiline": True, "default": "", "forceInput": True}),
+                "text": ("STRING", {"multiline": True, "default": ""}),
             },
             "optional": {
                 "chained_execution": ("SHOULD_EXECUTE",),
@@ -160,7 +161,9 @@ class ServingInputTextImage:
         if attachment_url_key not in serving_config:
             if default_image is not None:
                 return (default_image,)
-            raise ValueError("No attachment found in serving_config")
+            serving_config["serve_text_function"]("This command requires an image")
+            nodes.interrupt_processing(True)
+            return ('', None)
 
         attachment_url = serving_config[attachment_url_key]
         response = requests.get(attachment_url)
@@ -519,7 +522,9 @@ class ServingInputImage:
         if attachment_url_key not in serving_config:
             if default_image is not None:
                 return (default_image,)
-            raise ValueError("No attachment found in serving_config")
+            serving_config["serve_text_function"]("This command requires an image")
+            nodes.interrupt_processing(True)
+            return (None,)
 
         attachment_url = serving_config[attachment_url_key]
         response = requests.get(attachment_url)
@@ -569,7 +574,9 @@ class ServingInputImageAsLatent:
         if attachment_url_key not in serving_config:
             if default_latent is not None:
                 return (default_latent,)
-            raise ValueError("No attachment found in serving_config")
+            serving_config["serve_text_function"]("This command requires an image")
+            nodes.interrupt_processing(True)
+            return (None,)
 
         attachment_url = serving_config[attachment_url_key]
         response = requests.get(attachment_url)
