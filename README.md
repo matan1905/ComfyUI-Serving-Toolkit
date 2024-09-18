@@ -1,4 +1,4 @@
-[workflow(4).json](https://github.com/user-attachments/files/17041066/workflow.4.json)# ComfyUI Serving Toolkit
+# ComfyUI Serving Toolkit
 Welcome to the ComfyUI Serving Toolkit, a powerful tool for serving image generation workflows in Discord and other platforms (soon).
 This toolkit is designed to simplify the process of serving your ComfyUI workflow, making image generation bots easier than ever before.
 You can serve on discord, or on websockets.
@@ -22,7 +22,7 @@ or put all the files inside custom_nodes and run:
 ```
 
 ## The simplest configuration
-Here a simple workflow that will get a !generate \<prompt> and resond with an existing image, and !help will produce a help message
+Here a simple workflow that will get a !generate \<prompt> and respond with an existing image, and !help will produce a help message
 ![image](https://github.com/user-attachments/assets/bf4bfa6d-3252-40ab-88a4-7ee24147f046)
 
 
