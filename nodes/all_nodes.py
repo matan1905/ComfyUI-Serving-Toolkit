@@ -2,7 +2,7 @@ import time
 import threading
 from .discord_client import discord_client
 from collections import deque
-from .utils import parse_command_string, tensorToImageConversion
+from .utils import parse_command_string, tensorToImageConversion, CommandRegistry
 import discord
 import asyncio
 import requests
@@ -198,7 +198,7 @@ class DiscordServing():
         self.data_ready = threading.Event()
         self.data = deque()
         self.discord_token = None
-        pass
+        self.command_registry = CommandRegistry()
 
     def discord_runner(self):
          discord_client.run(self.discord_token)
@@ -245,6 +245,10 @@ class DiscordServing():
             async def on_message(message):
                 if message.content.startswith('!'):
                     command_name = message.content.split()[0][1:]
+
+                    if not self.command_registry.has_command(command_name):
+                        return
+
                     parsed_data = parse_command_string(message.content, command_name)
 
                     async def serve_multi_image_function(images):
@@ -307,10 +311,13 @@ class WebSocketServing():
         self.ws_running = False
         self.websocket_url= None
         self.ws = None
+        self.command_registry = CommandRegistry()
         pass
     def on_message(self,ws,message):
         try:
             parsed = json.loads(message)
+            if "command_name" in parsed and not self.command_registry.has_command(parsed["command_name"]):
+                return
             self.data.append(parsed)
             self.data_ready.set()
         except Exception as e:
@@ -523,12 +530,14 @@ class ServingInputImageAsLatent:
         return ({"samples": t},)
 
 
+registered_commands = []
+
 class CommandPickerServing:
     @classmethod
     def INPUT_TYPES(s):
         return {
             "required": {
-                "serving_config": ("SERVING_CONFIG",),
+                "serving_config": ("SERVING_CONFIG", {"lazy": True}),
                 "command_name": ("STRING",),
                 "should_execute": ("SHOULD_EXECUTE", {"lazy": True}),
             },
@@ -539,9 +548,16 @@ class CommandPickerServing:
     RETURN_TYPES = ()
     OUTPUT_NODE = True
 
+    def __init__(self):
+        self.commandRegistry = CommandRegistry()
+
     def check_lazy_status(self, serving_config, command_name, should_execute=None):
+        if serving_config is None:
+            self.commandRegistry.add_command(command_name)
+            return ["serving_config"]
+
         if serving_config["is_command"](command_name):
-            return ["should_execute"]
+            return ["should_execute", "serving_config"]
         return None
 
     def out(self, serving_config, command_name, should_execute=None):

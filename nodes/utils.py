@@ -38,3 +38,29 @@ def tensorToImageConversion(images, duration):
     return img_byte_array
 
 
+# This class is used to store the commands that are registered by the user.
+class CommandRegistry:
+    _instance = None
+    catch_all = False
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.commands = []
+        return cls._instance
+
+    def add_command(self, command):
+        self.commands.append(command)
+
+    def get_commands(self):
+        return self.commands
+
+    def clear_commands(self):
+        self.commands.clear()
+
+    def has_command(self, command):
+        return command in self.commands or self.catch_all
+
+    def add_catch_all(self):
+        self.catch_all = True
+

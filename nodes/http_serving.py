@@ -4,7 +4,7 @@ from collections import deque
 import json
 import base64
 from io import BytesIO
-from .utils import tensorToImageConversion
+from .utils import tensorToImageConversion, CommandRegistry
 from PIL import Image
 
 
@@ -20,6 +20,7 @@ class HTTPServing:
         self.output = None
         self.html_content = None
         self.path = None
+        self.command_registry = CommandRegistry()
 
     def http_handler(self):
         class RequestHandler(BaseHTTPRequestHandler):
@@ -32,10 +33,18 @@ class HTTPServing:
                     self2.end_headers()
 
             def do_POST(self2):
+                print(f"Received POST request: {self2.path}")
                 content_length = int(self2.headers['Content-Length'])
                 post_data = self2.rfile.read(content_length)
                 data = json.loads(post_data.decode('utf-8'))
                 self.path = self2.path
+
+                if not self.command_registry.has_command(self.path[1:]):
+                    self2.send_response(404)
+                    self2.send_header('Content-type', 'application/json')
+                    self2.end_headers()
+                    self2.wfile.write(json.dumps({"error": "Command not found"}).encode('utf-8'))
+                    return
 
                 self.data.append(data)
                 self.data_ready.set()
@@ -43,7 +52,6 @@ class HTTPServing:
                 self.output_ready.wait()
                 self.output_ready.clear()
                 response = self.output
-                print("Response:", response)
                 self2.send_response(200)
                 self2.send_header('Content-type', 'application/json')
                 # Cors

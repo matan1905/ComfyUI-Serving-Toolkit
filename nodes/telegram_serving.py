@@ -7,7 +7,7 @@ from PIL import Image
 import base64
 import numpy as np
 import torch
-from .utils import tensorToImageConversion, parse_command_string
+from .utils import tensorToImageConversion, parse_command_string, CommandRegistry
 
 
 class TelegramServing:
@@ -17,6 +17,7 @@ class TelegramServing:
         self.telegram_running = False
         self.bot = None
         self.allowed_chat_ids = None
+        self.command_registry = CommandRegistry()
 
     def telegram_handler(self):
         @self.bot.message_handler()
@@ -28,6 +29,9 @@ class TelegramServing:
                 return  # Silently ignore messages
 
             command_name = message.text.split()[0][1:]  # Extract command name without '/'
+            if not self.command_registry.has_command(command_name):
+                return  # Silently ignore wrong commands
+
             print(f"Received command from {message.chat.id}: {message.text}")
             parsed_data = parse_command_string(message.text, command_name)
 
