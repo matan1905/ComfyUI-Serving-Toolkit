@@ -571,8 +571,8 @@ class AlwaysExecute:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "serving_config": ("SERVING_CONFIG",),
-                "should_execute": ("SHOULD_EXECUTE",),
+                "serving_config": ("SERVING_CONFIG", {"lazy": True}),
+                "should_execute": ("SHOULD_EXECUTE", {"lazy": True}),
             },
         }
 
@@ -580,6 +580,16 @@ class AlwaysExecute:
     CATEGORY = "Serving-Toolkit"
     RETURN_TYPES = ()
     OUTPUT_NODE = True
+
+    def __init__(self):
+        self.command_registry = CommandRegistry()
+
+    def check_lazy_status(self, serving_config, should_execute):
+        if serving_config is None:
+            self.command_registry.add_catch_all()
+            return ["serving_config"]
+
+        return ["serving_config", "should_execute"]
 
     def out(self, serving_config, should_execute):
         if serving_config.get("finalize"):
