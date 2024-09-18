@@ -1,4 +1,4 @@
-# ComfyUI Serving Toolkit
+[workflow(4).json](https://github.com/user-attachments/files/17041066/workflow.4.json)# ComfyUI Serving Toolkit
 Welcome to the ComfyUI Serving Toolkit, a powerful tool for serving image generation workflows in Discord and other platforms (soon).
 This toolkit is designed to simplify the process of serving your ComfyUI workflow, making image generation bots easier than ever before.
 You can serve on discord, or on websockets.
@@ -22,11 +22,14 @@ or put all the files inside custom_nodes and run:
 ```
 
 ## The simplest configuration
-Here a simple workflow that will get a !generate \<prompt> and resond with an image
-![image](https://github.com/matan1905/ComfyUI-Serving-Toolkit/assets/24731932/e193be18-7b83-4f44-b119-21230f0b9a16)
+Here a simple workflow that will get a !generate \<prompt> and resond with an existing image, and !help will produce a help message
+![image](https://github.com/user-attachments/assets/bf4bfa6d-3252-40ab-88a4-7ee24147f046)
+
 
 You can copy the workflow json:
-[discordserv.json](https://github.com/matan1905/ComfyUI-Serving-Toolkit/files/13248566/discordserv.json)
+[workflow.json](https://github.com/user-attachments/files/17041080/workflow.4.json)
+
+
 
 
 
@@ -38,6 +41,7 @@ After setting up your workflow, In order for the serving to always be up, you ne
 #### This will require you to keep your ComfyUI and computer running.
 
 ## Nodes
+
 **DiscordServing**
 
 This node is an essencial part of the serving, queueing the prompt it will wait for a single message, process it and optionally return the image.
@@ -65,7 +69,25 @@ Inputs:
 
 Outputs:
 * Serving Config - A basic reference for this serving, used by the other nodes of this toolkit to get arguments and return images.
-  
+
+
+**CommandPickerServing**
+This node allows you to define specific behaviour for specific commands - it will only execute outputs that are connected to it when that specific command is given.
+Note, the command in HTTP Serving is the path after /, and the command in websocket is "command_name" json property
+
+Inputs:
+* serving_config -  a config made by a serving node
+* should_execute - an output of one of the output nodes, will only send that as part of the results if the command received is the one on this node
+* command - the command to filter by
+
+**CommandPickerServing**
+
+**AlwaysExecute**
+For when you don't care about commands, it will always return an output regardless of command given. this will execute for ALL commands, no matter if the commands are registered or not.
+
+Inputs:
+* serving_config -  a config made by a serving node
+* should_execute - an output of one of the output nodes
 
 
 **ServingInputText** 
