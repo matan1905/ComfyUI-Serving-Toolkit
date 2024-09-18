@@ -2,7 +2,6 @@
 Welcome to the ComfyUI Serving Toolkit, a powerful tool for serving image generation workflows in Discord and other platforms (soon).
 This toolkit is designed to simplify the process of serving your ComfyUI workflow, making image generation bots easier than ever before.
 You can serve on discord, or on websockets.
-* allowed_user - (Optional) The Telegram username of the user allowed to use the bot. If not set, all users can use the bot.
 
 If you need any help, Checkout the [Discord!](https://discord.gg/AyHFchFZuV)
 
