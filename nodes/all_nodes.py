@@ -15,6 +15,7 @@ import json
 import torch
 import torchvision.transforms as transforms
 import cv2
+import nodes
 
 
 
@@ -114,6 +115,71 @@ class ServingInputText:
         if argument not in serving_config:
             return (default,)
         return (serving_config[argument],)
+
+class ServingInputTextImage:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "serving_config": ("SERVING_CONFIG",),
+                "argument": ("STRING", {
+                    "multiline": False,
+                    "default": "prompt"
+                }),
+                "default_prompt": ("STRING", {
+                    "multiline": True,
+                    "default": ""
+                }),
+            },
+            "optional":{
+                "default_image": ("IMAGE",)
+            }
+        }
+
+    RETURN_TYPES = ("STRING", "IMAGE",)
+    FUNCTION = "out"
+    CATEGORY = "Serving-Toolkit"
+
+    def convert_color(self, image):
+        if len(image.shape) > 2 and image.shape[2] >= 4:
+            return cv2.cvtColor(image, cv2.COLOR_BGRA2RGB)
+        return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    def load_image(self, base64_str):
+        nparr = np.frombuffer(base64.b64decode(base64_str), np.uint8)
+        result = cv2.imdecode(nparr, cv2.IMREAD_UNCHANGED)
+        result = self.convert_color(result)
+        result = result.astype(np.float32) / 255.0
+        image = torch.from_numpy(result)[None,]
+        return image
+
+    def out(self, serving_config, argument, default_prompt, default_image = None):
+        attachment_url_key = "attachment_url_0"
+        if attachment_url_key not in serving_config:
+            if default_image is not None:
+                return (default_image,)
+            serving_config["serve_text_function"]("This command requires an image")
+            nodes.interrupt_processing(True)
+            return ('', None)
+
+        attachment_url = serving_config[attachment_url_key]
+        response = requests.get(attachment_url)
+        image = Image.open(io.BytesIO(response.content)).convert("RGB")
+
+        # Convert PIL image to base64 string
+        image_file = io.BytesIO()
+        image.save(image_file, format='PNG')
+        image_file.seek(0)
+        base64_img = base64.b64encode(image_file.read()).decode('utf-8')
+
+        # Use the base64 string to get the image tensor
+        img_out = self.load_image(base64_img)
+        if argument not in serving_config:
+            return (default_prompt, img_out)
+        return (serving_config[argument], img_out)
 
 
 class ServingInputNumber:
@@ -463,7 +529,9 @@ class ServingInputImage:
         if attachment_url_key not in serving_config:
             if default_image is not None:
                 return (default_image,)
-            raise ValueError("No attachment found in serving_config")
+            serving_config["serve_text_function"]("This command requires an image")
+            nodes.interrupt_processing(True)
+            return (None,)
 
         attachment_url = serving_config[attachment_url_key]
         response = requests.get(attachment_url)
@@ -513,7 +581,9 @@ class ServingInputImageAsLatent:
         if attachment_url_key not in serving_config:
             if default_latent is not None:
                 return (default_latent,)
-            raise ValueError("No attachment found in serving_config")
+            serving_config["serve_text_function"]("This command requires an image")
+            nodes.interrupt_processing(True)
+            return (None,)
 
         attachment_url = serving_config[attachment_url_key]
         response = requests.get(attachment_url)
@@ -600,6 +670,7 @@ class AlwaysExecute:
 NODE_CLASS_MAPPINGS = {
     "ServingOutput": ServingOutput,
     "ServingInputText": ServingInputText,
+    "ServingInputTextImage": ServingInputTextImage,
     "ServingInputNumber": ServingInputNumber,
     "DiscordServing": DiscordServing,
     "WebSocketServing": WebSocketServing,
@@ -617,6 +688,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "DiscordServing": "Discord Serving",
     "WebSocketServing": "WebSocket Serving",
     "ServingInputText": "Serving Input Text",
+    "ServingInputTextImage": "Serving Input Text & Image",
     "ServingInputNumber": "Serving Input Number",
     "ServingInputImage": "Serving Input Image",
     "ServingTextOutput": "Serving Text Output",
