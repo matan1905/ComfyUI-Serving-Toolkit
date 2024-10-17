@@ -608,7 +608,7 @@ class CommandPickerServing:
         return {
             "required": {
                 "serving_config": ("SERVING_CONFIG", {"lazy": True}),
-                "command_name": ("STRING",),
+                "command_name": ("STRING", {"multiline": False, "default": ""}),
                 "should_execute": ("SHOULD_EXECUTE", {"lazy": True}),
             },
         }
